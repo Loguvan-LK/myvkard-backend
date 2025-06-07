@@ -47,39 +47,60 @@ exports.handlePurchase = async (req, res) => {
 exports.handleSuccessfulPayment = async (req, res) => {
   try {
     const { session_id, purchase_id } = req.query;
+    console.log("Session ID:", session_id);
+    console.log("Purchase ID:", purchase_id);
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
-    
-    if (session.payment_status === 'paid') {
-      const purchase = await Purchase.findByIdAndUpdate(
-        purchase_id,
-        { status: 'completed' },
-        { new: true }
-      );
+    console.log("Session payment_status:", session.payment_status);
 
-      if (purchase) {
-        await Cart.findOneAndUpdate(
-          { userId: purchase.userId },
-          { $set: { items: [] } }
-        );
-
-        const user = await User.findById(purchase.userId);
-        user.nfcCardCount += purchase.quantity;
-        await user.save();
-
-        res.json({ 
-          success: true, 
-          message: 'Payment successful',
-          user: { ...user._doc, uniqueId: user.uniqueId }
-        });
-      } else {
-        res.status(404).json({ success: false, message: 'Purchase not found' });
-      }
-    } else {
-      res.status(400).json({ success: false, message: 'Payment not completed' });
+    if (session.payment_status !== "paid") {
+      return res.status(400).json({ success: false, message: "Payment not completed" });
     }
+
+    // ✅ Check if this purchase is already completed
+    const purchase = await Purchase.findById(purchase_id);
+    if (!purchase) {
+      return res.status(404).json({ success: false, message: "Purchase not found" });
+    }
+    
+    if (!purchase || purchase.status === 'completed') {
+      return res.status(200).json({ success: true, message: "Already processed" });
+    }
+    if (purchase.status === "completed") {
+      // Already processed – return without updating again
+      return res.json({
+        success: true,
+        message: "Payment already processed",
+        purchasedQuantity: purchase.quantity,
+      });
+    }
+
+    // ✅ Update the purchase as completed
+    purchase.status = "completed";
+    await purchase.save();
+
+    // Clear cart
+    await Cart.findOneAndUpdate(
+      { userId: purchase.userId },
+      { $set: { items: [] } }
+    );
+
+    // Update user
+    const user = await User.findById(purchase.userId);
+    user.nfcCardCount += purchase.quantity;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Payment successful",
+      user: { ...user._doc, uniqueId: user.uniqueId },
+      purchasedQuantity: purchase.quantity,
+    });
   } catch (error) {
-    console.error('Payment Success Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to process successful payment' });
+    console.error("Payment Success Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process successful payment",
+    });
   }
 };

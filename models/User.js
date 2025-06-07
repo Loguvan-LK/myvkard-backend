@@ -1,9 +1,33 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-const urlSchema = new mongoose.Schema({
-  url: { type: String, required: true },
+const companyProfileSchema = new mongoose.Schema({
+  companyName: { type: String, required: true },
+  companyLocation: { type: String, required: true },
+  companyPhone: { type: String, required: true },
+  companyEmail: { type: String, required: true },
+  website: { type: String, default: "" },
+  
+  // Social Media Links
+  twitterX: { type: String, default: "" },
+  youtube: { type: String, default: "" },
+  instagram: { type: String, default: "" },
+  facebook: { type: String, default: "" },
+  linkedin: { type: String, default: "" },
+  
+  // Additional Info
+  description: { type: String, default: "" },
+  industry: { type: String, default: "" },
+  foundedYear: { type: Number, default: null },
+  employeeCount: { type: String, default: "" },
+  
+  // Visual Assets
+  logo: { type: String, default: "" },
+  coverImage: { type: String, default: "" },
+  
+  // Status
   isActive: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
 });
 
 const userSchema = new mongoose.Schema({
@@ -25,7 +49,15 @@ const userSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
-  urls: [urlSchema],
+  companyProfiles: [companyProfileSchema],
+  
+  // Legacy field - keep temporarily to avoid index issues
+  // Remove this after dropping the index
+  nfcCards: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: undefined
+  },
+  
   nfcCardCount: {
     type: Number,
     default: 0,
