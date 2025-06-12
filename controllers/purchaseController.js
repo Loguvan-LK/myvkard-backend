@@ -1,91 +1,31 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const nodemailer = require('nodemailer');
-
-const QRCode = require('qrcode');
 const Purchase = require('../models/Purchase');
 const Cart = require('../models/Cart');
 const User = require('../models/User');
+ const QRCode = require('qrcode');
+
+// Email transporter configuration
+ // SOLUTION 1: Updated Gmail Configuration with Better Error Handling
+const nodemailer = require('nodemailer');
 require('dotenv').config();
-// Configure nodemailer (you'll need to set up your email service)
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  port: 465, // or 587
-  secure: true,
+  host: 'smtp.gmail.com',
+  port: 587, // Use 587 instead of 465
+  secure: false, // Use STARTTLS (more reliable than SSL)
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // Should be App Password, not regular password
   },
   tls: {
-    rejectUnauthorized: false, // Allow self-signed certs
+    rejectUnauthorized: false,
   },
+  // Add connection timeout and retry options
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 60000,     // 60 seconds
 });
-
-
-// Function to send purchase confirmation email
-const sendPurchaseConfirmationEmail = async (userEmail, deliveryAddress, quantity, qrCodeDataURL, userUniqueId) => {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: userEmail,
-    subject: 'Your NFC Cards Order Confirmation - Shipping Details',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333; text-align: center;">Order Confirmation</h2>
-        
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #28a745; margin-top: 0;">What's Next?</h3>
-          <ul style="color: #333; line-height: 1.6;">
-            <li>Your NFC cards are being prepared</li>
-            <li>Check your email for shipping details</li>
-            <li>Visit your dashboard to manage your cards</li>
-            <li>Each card comes with 3 customizable profiles</li>
-          </ul>
-        </div>
-
-        <div style="background-color: #ffffff; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #333; margin-top: 0;">Order Details</h3>
-          <p><strong>Quantity:</strong> ${quantity} NFC Card${quantity > 1 ? 's' : ''}</p>
-        </div>
-
-        <div style="background-color: #ffffff; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #333; margin-top: 0;">Shipping Address</h3>
-          <p style="margin: 5px 0;"><strong>Name:</strong> ${deliveryAddress.fullName}</p>
-          <p style="margin: 5px 0;"><strong>Address:</strong> ${deliveryAddress.addressLine1}</p>
-          ${deliveryAddress.addressLine2 ? `<p style="margin: 5px 0;">${deliveryAddress.addressLine2}</p>` : ''}
-          <p style="margin: 5px 0;"><strong>City:</strong> ${deliveryAddress.city}</p>
-          <p style="margin: 5px 0;"><strong>State:</strong> ${deliveryAddress.state}</p>
-          <p style="margin: 5px 0;"><strong>Postal Code:</strong> ${deliveryAddress.postalCode}</p>
-          <p style="margin: 5px 0;"><strong>Country:</strong> ${deliveryAddress.country}</p>
-          <p style="margin: 5px 0;"><strong>Phone:</strong> ${deliveryAddress.phoneNumber}</p>
-          ${deliveryAddress.additionalInstructions ? `<p style="margin: 5px 0;"><strong>Additional Instructions:</strong> ${deliveryAddress.additionalInstructions}</p>` : ''}
-        </div>
-
-        <div style="background-color: #ffffff; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-          <h3 style="color: #333; margin-top: 0;">Your NFC Profile QR Code</h3>
-          <p style="color: #666; margin-bottom: 15px;">Scan this QR code to access your NFC profile:</p>
-          <img src="${qrCodeDataURL}" alt="QR Code" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 10px;">
-          <p style="color: #666; margin-top: 15px; font-size: 14px;">
-            Profile URL: <a href="https://myvkard-backend-omrh.onrender.com/api/${userUniqueId}" style="color: #007bff;">https://myvkard-backend-omrh.onrender.com/api/${userUniqueId}</a>
-          </p>
-        </div>
-
-        <div style="background-color: #e9ecef; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="color: #666; margin: 0; font-size: 14px; text-align: center;">
-            Thank you for your purchase! We'll send you tracking information once your order ships.
-          </p>
-        </div>
-      </div>
-    `
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('Purchase confirmation email sent successfully');
-    return true;
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return false;
-  }
-};
 
 // Function to generate QR code
 const generateQRCode = async (url) => {
@@ -100,8 +40,93 @@ const generateQRCode = async (url) => {
     });
     return qrCodeDataURL;
   } catch (error) {
-    console.error('Error generating QR code:', error);
+    console.error('QR Code generation error:', error);
     return null;
+  }
+};
+
+// Function to send purchase confirmation email
+// Function to send purchase confirmation email with CID attachment
+const sendPurchaseConfirmationEmail = async (userEmail, deliveryAddress, quantity, qrCodeDataURL, userUniqueId) => {
+  const profileUrl = `${process.env.BACKEND_URL}/api/${userUniqueId}`;
+
+  // Convert base64 to buffer for attachment
+  let qrCodeBuffer = null;
+  if (qrCodeDataURL) {
+    try {
+      // Remove the data URL prefix (data:image/png;base64,)
+      const base64Data = qrCodeDataURL.replace(/^data:image\/png;base64,/, '');
+      qrCodeBuffer = Buffer.from(base64Data, 'base64');
+    } catch (error) {
+      console.error('Error converting QR code to buffer:', error);
+    }
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: userEmail,
+    subject: 'NFC Cards Purchase Confirmation - Shipping Details',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">🎉 Your NFC Cards Order Confirmed!</h2>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #28a745;">What's Next?</h3>
+          <ul style="line-height: 1.6;">
+            <li>✅ Your NFC cards are being prepared</li>
+            <li>📧 Check your email for shipping details</li>
+            <li>🎛️ Visit your dashboard to manage your cards</li>
+            <li>🎨 Each card comes with 3 customizable profiles</li>
+          </ul>
+        </div>
+
+        <div style="background-color: #e9ecef; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #333;">📦 Shipping Details</h3>
+          <p><strong>Quantity:</strong> ${quantity} NFC Card(s)</p>
+          <p><strong>Delivery Address:</strong></p>
+          <div style="margin-left: 20px;">
+            <p>${deliveryAddress.fullName}<br>
+            ${deliveryAddress.addressLine1}<br>
+            ${deliveryAddress.addressLine2 ? deliveryAddress.addressLine2 + '<br>' : ''}
+            ${deliveryAddress.city}, ${deliveryAddress.state} ${deliveryAddress.postalCode}<br>
+            ${deliveryAddress.country}<br>
+            Phone: ${deliveryAddress.phoneNumber}</p>
+            ${deliveryAddress.additionalInstructions ? `<p><em>Additional Instructions: ${deliveryAddress.additionalInstructions}</em></p>` : ''}
+          </div>
+        </div>
+
+        <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <h3 style="color: #155724;">📱 Your Profile QR Code</h3>
+          <p>Scan this QR code to view your profile:</p>
+          ${qrCodeBuffer ? `<img src="cid:qrcode" alt="Profile QR Code" style="max-width: 200px; margin: 10px 0; border: 1px solid #ddd;">` : '<p style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px;">QR Code could not be generated</p>'}
+          <p style="margin-top: 10px;">
+            <a href="${profileUrl}" style="color: #007bff; text-decoration: none;">
+              ${profileUrl}
+            </a>
+          </p>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; border-top: 2px solid #dee2e6;">
+          <p>We'll send you tracking information once your cards are shipped.</p>
+          <p>If you have any questions, please don't hesitate to contact our support team.</p>
+          <p style="color: #6c757d; font-size: 14px;">Thank you for choosing our NFC cards!</p>
+        </div>
+      </div>
+    `,
+    // Add the QR code as an attachment with CID
+    attachments: qrCodeBuffer ? [{
+      filename: 'qr-code.png',
+      content: qrCodeBuffer,
+      cid: 'qrcode', // Content-ID for referencing in HTML
+      contentType: 'image/png'
+    }] : []
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Purchase confirmation email sent successfully');
+  } catch (error) {
+    console.error('Error sending purchase confirmation email:', error);
   }
 };
 
@@ -211,22 +236,26 @@ exports.handleSuccessfulPayment = async (req, res) => {
     // Update user
     const user = await User.findById(purchase.userId);
     user.nfcCardCount += purchase.quantity;
+    
+    // 🆕 Generate QR code and save to user
+    const profileUrl = `${process.env.BACKEND_URL}/api/${user.uniqueId}`;
+    const qrCodeDataURL = await generateQRCode(profileUrl);
+    
+    if (qrCodeDataURL) {
+      user.qrCode = qrCodeDataURL;
+      user.profileUrl = profileUrl;
+    }
+    
     await user.save();
 
-    // 🆕 Generate QR Code for user's profile
-    const profileUrl = `http://localhost:5000/api/${user.uniqueId}`;
-    const qrCodeDataURL = await generateQRCode(profileUrl);
-
-    // 🆕 Send confirmation email with delivery details and QR code
-    if (qrCodeDataURL) {
-      await sendPurchaseConfirmationEmail(
-        purchase.email,
-        purchase.deliveryAddress,
-        purchase.quantity,
-        qrCodeDataURL,
-        user.uniqueId
-      );
-    }
+    // Send purchase confirmation email with QR code
+    await sendPurchaseConfirmationEmail(
+      purchase.email, 
+      purchase.deliveryAddress, 
+      purchase.quantity, 
+      qrCodeDataURL, 
+      user.uniqueId
+    );
 
     res.json({
       success: true,
@@ -235,7 +264,7 @@ exports.handleSuccessfulPayment = async (req, res) => {
       purchasedQuantity: purchase.quantity,
       deliveryAddress: purchase.deliveryAddress,
       qrCode: qrCodeDataURL, // Include QR code in response
-      profileUrl: profileUrl   // Include profile URL in response
+      profileUrl: profileUrl
     });
   } catch (error) {
     console.error("Payment Success Error:", error);

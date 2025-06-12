@@ -21,6 +21,7 @@ const {
   removeFromCart,
   clearCart,
 } = require("../controllers/cartController");
+const { uploadLogo, deleteLogo } = require("../controllers/uploadController");
 
 // Authentication routes
 router.post("/login", login);
@@ -57,5 +58,9 @@ router.delete("/cart", authMiddleware, clearCart);
 
 // Public route to show active contact (visiting card view)
 router.get("/:uniqueId", showActiveCompanyProfile);
+
+//logo upload routes
+router.post("/upload-logo", authMiddleware, uploadLogo);
+router.delete("/delete-logo", authMiddleware, deleteLogo); 
 
 module.exports = router;

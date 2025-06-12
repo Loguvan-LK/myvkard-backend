@@ -1,11 +1,11 @@
 // myvkard-backend/controller/redirectController.js
-const User = require('../models/User');
+const User = require("../models/User");
 
 exports.showActiveCompanyProfile = async (req, res) => {
   try {
     const { uniqueId } = req.params;
     const user = await User.findOne({ uniqueId });
-    
+
     if (!user) {
       return res.status(404).send(`
         <html>
@@ -15,7 +15,7 @@ exports.showActiveCompanyProfile = async (req, res) => {
         </html>
       `);
     }
-    
+
     if (user.nfcCardCount <= 0) {
       return res.status(403).send(`
         <html>
@@ -25,9 +25,9 @@ exports.showActiveCompanyProfile = async (req, res) => {
         </html>
       `);
     }
-    
-    const activeProfile = user.companyProfiles.find(p => p.isActive);
-    
+
+    const activeProfile = user.companyProfiles.find((p) => p.isActive);
+
     if (!activeProfile) {
       return res.status(404).send(`
         <html>
@@ -37,7 +37,7 @@ exports.showActiveCompanyProfile = async (req, res) => {
         </html>
       `);
     }
-    
+
     // Return the mobile-optimized company card view as HTML
     const cardHtml = `
 <!DOCTYPE html>
@@ -140,7 +140,6 @@ exports.showActiveCompanyProfile = async (req, res) => {
             display: flex;
             align-items: center;
             margin-bottom: 16px;
-            padding: 12px 0;
         }
         
         .contact-icon {
@@ -291,21 +290,14 @@ exports.showActiveCompanyProfile = async (req, res) => {
             text-align: center;
         }
         
-        .qr-code {
-            width: 80px;
-            height: 80px;
-            background: #f8f8f8;
-            border: 2px solid #e5e5e5;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: #999;
-            font-weight: bold;
-            margin: 0 auto;
-        }
-        
+.qr-code-img {
+    width: 80px;
+    height: 80px;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    object-fit: contain;
+    background: white;
+}
         .qr-text {
             font-size: 11px;
             color: #666;
@@ -352,14 +344,27 @@ exports.showActiveCompanyProfile = async (req, res) => {
         <!-- Header Section -->
         <div class="card-header">
             <div class="profile-avatar">
-                ${activeProfile.logo ? 
-                  `<img src="${activeProfile.logo}" alt="${activeProfile.companyName} Logo">` : 
-                  `${activeProfile.companyName.charAt(0)}${activeProfile.companyName.split(' ')[1] ? activeProfile.companyName.split(' ')[1].charAt(0) : ''}`
+                ${
+                  activeProfile.logo
+                    ? `<img src="${activeProfile.logo}" alt="${activeProfile.companyName} Logo">`
+                    : `${activeProfile.companyName.charAt(0)}${
+                        activeProfile.companyName.split(" ")[1]
+                          ? activeProfile.companyName.split(" ")[1].charAt(0)
+                          : ""
+                      }`
                 }
             </div>
-            <div class="company-name">${activeProfile.companyName}</div>
-            <div class="company-title">${activeProfile.industry || 'Business Services'}</div>
-            <div class="company-subtitle">${activeProfile.tagline || activeProfile.companyName}</div>
+${
+  activeProfile.userProfile
+    ? `<div class="company-name">${activeProfile.userProfile}</div>`
+    : ""
+}
+            <div class="company-title">${
+              activeProfile.industry || "Business Services"
+            }</div>
+            <div class="company-subtitle">${
+              activeProfile.tagline || activeProfile.companyName
+            }</div>
         </div>
         
         <!-- Content Section -->
@@ -370,25 +375,33 @@ exports.showActiveCompanyProfile = async (req, res) => {
             <div class="contact-item">
                 <div class="contact-icon">📞</div>
                 <div class="contact-text">
-                    <a href="tel:${activeProfile.companyPhone}">${activeProfile.companyPhone}</a>
+                    <a href="tel:${activeProfile.companyPhone}">${
+      activeProfile.companyPhone
+    }</a>
                 </div>
             </div>
             
             <div class="contact-item">
                 <div class="contact-icon">✉️</div>
                 <div class="contact-text">
-                    <a href="mailto:${activeProfile.companyEmail}">${activeProfile.companyEmail}</a>
+                    <a href="mailto:${activeProfile.companyEmail}">${
+      activeProfile.companyEmail
+    }</a>
                 </div>
             </div>
             
-            ${activeProfile.website ? `
+            ${
+              activeProfile.website
+                ? `
             <div class="contact-item">
                 <div class="contact-icon">🌐</div>
                 <div class="contact-text">
                     <a href="${activeProfile.website}" target="_blank">${activeProfile.website}</a>
                 </div>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <div class="contact-item">
                 <div class="contact-icon">📍</div>
@@ -396,22 +409,26 @@ exports.showActiveCompanyProfile = async (req, res) => {
             </div>
             
             <!-- About Section -->
-            ${activeProfile.description ? `
+            ${
+              activeProfile.description
+                ? `
             <div class="about-section">
                 <div class="section-title">About Our Practice</div>
                 <div class="about-text">${activeProfile.description}</div>
             </div>
-            ` : `
+            `
+                : `
             <div class="about-section">
                 <div class="section-title">About Our Practice</div>
                 <div class="about-text">
-                    ${activeProfile.companyName} provides comprehensive business advisory services to established enterprises and emerging companies. We specialize in strategic planning, operational excellence, and sustainable growth solutions.
+                    ${activeProfile.companyName}
                 </div>
             </div>
-            `}
+            `
+            }
             
             <!-- Services Tags -->
-            <div class="section-title">Key Services</div>
+            <div class="section-title">Key Skills & Services</div>
             <div class="services-tags">
                 <span class="service-tag">Strategic Planning</span>
                 <span class="service-tag">Business Development</span>
@@ -432,15 +449,39 @@ exports.showActiveCompanyProfile = async (req, res) => {
             <!-- Social Links and QR Code -->
             <div class="social-section">
                 <div class="social-links">
-                    ${activeProfile.linkedin ? `<a href="${activeProfile.linkedin}" class="social-link social-linkedin" target="_blank">💼</a>` : ''}
-                    ${activeProfile.facebook ? `<a href="${activeProfile.facebook}" class="social-link social-facebook" target="_blank">📘</a>` : ''}
-                    ${activeProfile.instagram ? `<a href="${activeProfile.instagram}" class="social-link social-instagram" target="_blank">📷</a>` : ''}
-                    ${activeProfile.twitterX ? `<a href="${activeProfile.twitterX}" class="social-link social-twitter" target="_blank">🐦</a>` : ''}
-                    ${activeProfile.youtube ? `<a href="${activeProfile.youtube}" class="social-link social-youtube" target="_blank">📺</a>` : ''}
+                    ${
+                      activeProfile.linkedin
+                        ? `<a href="${activeProfile.linkedin}" class="social-link social-linkedin" target="_blank">💼</a>`
+                        : ""
+                    }
+                    ${
+                      activeProfile.facebook
+                        ? `<a href="${activeProfile.facebook}" class="social-link social-facebook" target="_blank">📘</a>`
+                        : ""
+                    }
+                    ${
+                      activeProfile.instagram
+                        ? `<a href="${activeProfile.instagram}" class="social-link social-instagram" target="_blank">📷</a>`
+                        : ""
+                    }
+                    ${
+                      activeProfile.twitterX
+                        ? `<a href="${activeProfile.twitterX}" class="social-link social-twitter" target="_blank">🐦</a>`
+                        : ""
+                    }
+                    ${
+                      activeProfile.youtube
+                        ? `<a href="${activeProfile.youtube}" class="social-link social-youtube" target="_blank">📺</a>`
+                        : ""
+                    }
                 </div>
                 
                 <div class="qr-code-section">
-                    <div class="qr-code">QR</div>
+                    ${
+                      user.qrCode
+                        ? `<img src="${user.qrCode}" alt="QR Code" class="qr-code-img">`
+                        : `<div class="qr-code">QR</div>`
+                    }
                     <div class="qr-text">Scan Card</div>
                 </div>
             </div>
@@ -454,23 +495,26 @@ exports.showActiveCompanyProfile = async (req, res) => {
         
         function openWhatsApp() {
             const message = encodeURIComponent(\`Hello, I found your business card for \${activeProfile.companyName}. I'd like to know more about your services.\`);
-            const phoneNumber = '${activeProfile.companyPhone}'.replace(/[^0-9]/g, '');
+            const phoneNumber = '${
+              activeProfile.companyPhone
+            }'.replace(/[^0-9]/g, '');
             window.open(\`https://wa.me/\${phoneNumber}?text=\${message}\`, '_blank');
         }
         
         function saveContact() {
             const company = {
+                userProfile: "${activeProfile.userProfile || ""}",
                 name: "${activeProfile.companyName}",
                 email: "${activeProfile.companyEmail}",
                 phone: "${activeProfile.companyPhone}",
                 location: "${activeProfile.companyLocation}",
-                website: "${activeProfile.website || ''}",
-                industry: "${activeProfile.industry || ''}",
-                linkedin: "${activeProfile.linkedin || ''}",
-                facebook: "${activeProfile.facebook || ''}",
-                instagram: "${activeProfile.instagram || ''}",
-                twitter: "${activeProfile.twitterX || ''}",
-                youtube: "${activeProfile.youtube || ''}"
+                website: "${activeProfile.website || ""}",
+                industry: "${activeProfile.industry || ""}",
+                linkedin: "${activeProfile.linkedin || ""}",
+                facebook: "${activeProfile.facebook || ""}",
+                instagram: "${activeProfile.instagram || ""}",
+                twitter: "${activeProfile.twitterX || ""}",
+                youtube: "${activeProfile.youtube || ""}"
             };
             
             // Create vCard format for company
@@ -511,10 +555,10 @@ END:VCARD\`;
 </body>
 </html>
     `;
-    
+
     res.send(cardHtml);
   } catch (error) {
-    console.error('Show Active Company Profile Error:', error);
+    console.error("Show Active Company Profile Error:", error);
     res.status(500).send(`
       <html>
         <body style="font-family: Arial; text-align: center; padding: 50px;">

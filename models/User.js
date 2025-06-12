@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const companyProfileSchema = new mongoose.Schema({
+  userProfile: { type: String, default: "" },
   companyName: { type: String, required: true },
   companyLocation: { type: String, required: true },
   companyPhone: { type: String, required: true },
@@ -62,10 +63,23 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  
+  // QR Code storage
+  qrCode: {
+    type: String, // Base64 data URL
+    default: ""
+  },
+  
+  profileUrl: {
+    type: String,
+    default: ""
+  },
+  
   createdAt: {
     type: Date,
     default: Date.now,
   },
+
 });
 
 userSchema.pre("save", async function (next) {

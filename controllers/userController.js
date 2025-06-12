@@ -3,6 +3,7 @@ const User = require('../models/User');
 
 exports.addCompanyProfile = async (req, res) => {
   const { 
+    userProfile,
     companyName, 
     companyLocation, 
     companyPhone, 
@@ -30,6 +31,7 @@ exports.addCompanyProfile = async (req, res) => {
     }
 
     const newCompanyProfile = {
+      userProfile,
       companyName,
       companyLocation,
       companyPhone,
@@ -107,7 +109,8 @@ exports.setActiveCompanyProfile = async (req, res) => {
 
 exports.updateCompanyProfile = async (req, res) => {
   const { 
-    profileId, 
+    profileId,
+    userProfile, 
     companyName, 
     companyLocation, 
     companyPhone, 
@@ -138,6 +141,7 @@ exports.updateCompanyProfile = async (req, res) => {
     // Update profile details
     user.companyProfiles[profileIndex] = {
       ...user.companyProfiles[profileIndex]._doc,
+      userProfile: userProfile || user.companyProfiles[profileIndex].userProfile,
       companyName: companyName || user.companyProfiles[profileIndex].companyName,
       companyLocation: companyLocation || user.companyProfiles[profileIndex].companyLocation,
       companyPhone: companyPhone || user.companyProfiles[profileIndex].companyPhone,
