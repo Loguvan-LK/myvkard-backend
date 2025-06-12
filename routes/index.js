@@ -2,13 +2,15 @@
 const express = require("express");
 const router = express.Router();
 const { sendOtp, verifyOtp } = require("../controllers/otpController");
-const { handlePurchase, handleSuccessfulPayment } = require("../controllers/purchaseController");
+const { handlePurchase, handleSuccessfulPayment, getPurchaseDetails,updateDeliveryAddress  } = require("../controllers/purchaseController");
 const { register, login } = require("../controllers/authController");
 const { 
   addCompanyProfile, 
   removeCompanyProfile, 
   setActiveCompanyProfile, 
-  updateCompanyProfile 
+  updateCompanyProfile,
+  getCurrentUser,  // Add this
+  updateUserProfile // Add this
 } = require("../controllers/userController");
 const { showActiveCompanyProfile } = require("../controllers/redirectController");
 const { getNFCCards, updateNFCCard } = require("../controllers/nfcController");
@@ -27,9 +29,15 @@ router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
 router.post("/send-registration-otp", sendOtp);
 
+// User routes - Add these
+router.get("/user", authMiddleware, getCurrentUser);
+router.put("/user", authMiddleware, updateUserProfile);
+
 // Purchase routes
 router.post("/purchase", authMiddleware, handlePurchase);
 router.get("/success", handleSuccessfulPayment);
+router.get('/purchase/:purchaseId', authMiddleware,getPurchaseDetails);
+router.put('/purchase/:purchaseId/delivery-address', authMiddleware,updateDeliveryAddress);
 
 // Contact management routes (Updated from URL management)
 router.post("/add-company-profile", authMiddleware, addCompanyProfile);
