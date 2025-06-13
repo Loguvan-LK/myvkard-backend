@@ -46,6 +46,8 @@ exports.showActiveCompanyProfile = async (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${activeProfile.companyName} - Digital Business Card</title>
+    <!-- Add Font Awesome for social icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -283,21 +285,22 @@ exports.showActiveCompanyProfile = async (req, res) => {
         .social-linkedin { background: #0077b5; }
         .social-facebook { background: #1877f2; }
         .social-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-        .social-twitter { background: #1da1f2; }
+        .social-twitter { background: #000000; } /* Updated for X/Twitter */
         .social-youtube { background: #ff0000; }
         
         .qr-code-section {
             text-align: center;
         }
         
-.qr-code-img {
-    width: 80px;
-    height: 80px;
-    border: 2px solid #e5e5e5;
-    border-radius: 8px;
-    object-fit: contain;
-    background: white;
-}
+        .qr-code-img {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            object-fit: contain;
+            background: white;
+        }
+        
         .qr-text {
             font-size: 11px;
             color: #666;
@@ -354,11 +357,11 @@ exports.showActiveCompanyProfile = async (req, res) => {
                       }`
                 }
             </div>
-${
-  activeProfile.userProfile
-    ? `<div class="company-name">${activeProfile.userProfile}</div>`
-    : ""
-}
+            ${
+              activeProfile.userProfile
+                ? `<div class="company-name">${activeProfile.userProfile}</div>`
+                : ""
+            }
             <div class="company-title">${
               activeProfile.industry || "Business Services"
             }</div>
@@ -449,39 +452,35 @@ ${
             <!-- Social Links and QR Code -->
             <div class="social-section">
                 <div class="social-links">
-                    ${
-                      activeProfile.linkedin
-                        ? `<a href="${activeProfile.linkedin}" class="social-link social-linkedin" target="_blank">💼</a>`
-                        : ""
-                    }
-                    ${
-                      activeProfile.facebook
-                        ? `<a href="${activeProfile.facebook}" class="social-link social-facebook" target="_blank">📘</a>`
-                        : ""
-                    }
-                    ${
-                      activeProfile.instagram
-                        ? `<a href="${activeProfile.instagram}" class="social-link social-instagram" target="_blank">📷</a>`
-                        : ""
-                    }
-                    ${
-                      activeProfile.twitterX
-                        ? `<a href="${activeProfile.twitterX}" class="social-link social-twitter" target="_blank">🐦</a>`
-                        : ""
-                    }
-                    ${
-                      activeProfile.youtube
-                        ? `<a href="${activeProfile.youtube}" class="social-link social-youtube" target="_blank">📺</a>`
-                        : ""
-                    }
+                    ${activeProfile.linkedin ? `
+                        <a href="${activeProfile.linkedin}" class="social-link social-linkedin" target="_blank">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    ` : ""}
+                    ${activeProfile.facebook ? `
+                        <a href="${activeProfile.facebook}" class="social-link social-facebook" target="_blank">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                    ` : ""}
+                    ${activeProfile.instagram ? `
+                        <a href="${activeProfile.instagram}" class="social-link social-instagram" target="_blank">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    ` : ""}
+                    ${activeProfile.twitterX ? `
+                        <a href="${activeProfile.twitterX}" class="social-link social-twitter" target="_blank">
+                            <i class="fab fa-x-twitter"></i>
+                        </a>
+                    ` : ""}
+                    ${activeProfile.youtube ? `
+                        <a href="${activeProfile.youtube}" class="social-link social-youtube" target="_blank">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    ` : ""}
                 </div>
                 
                 <div class="qr-code-section">
-                    ${
-                      user.qrCode
-                        ? `<img src="${user.qrCode}" alt="QR Code" class="qr-code-img">`
-                        : `<div class="qr-code">QR</div>`
-                    }
+                    ${user.qrCode ? `<img src="${user.qrCode}" alt="QR Code" class="qr-code-img">` : `<div class="qr-code">QR</div>`}
                     <div class="qr-text">Scan Card</div>
                 </div>
             </div>
@@ -494,7 +493,7 @@ ${
         }
         
         function openWhatsApp() {
-            const message = encodeURIComponent(\`Hello, I found your business card for \${activeProfile.companyName}. I'd like to know more about your services.\`);
+            const message = encodeURIComponent(\`Hello, I found your business card for ${activeProfile.companyName}. I'd like to know more about your services.\`);
             const phoneNumber = '${
               activeProfile.companyPhone
             }'.replace(/[^0-9]/g, '');
