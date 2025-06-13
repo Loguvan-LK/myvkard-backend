@@ -58,7 +58,7 @@ exports.uploadLogo = (req, res) => {
 
     // Return the FULL URL including your base URL
     // Make sure to replace 'your-domain.com' with your actual domain
-    const baseUrl = process.env.BASE_URL || 'http://localhost:5000'; // Use your actual base URL
+    const baseUrl = process.env.BASE_URL || 'https://my-v-kard.vercel.app'; // Use your actual base URL
     const logoUrl = `${baseUrl}/uploads/${req.file.filename}`;
     
     res.json({ 
