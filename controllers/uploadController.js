@@ -58,7 +58,7 @@ exports.uploadLogo = (req, res) => {
 
     // Return the FULL URL including your base URL
     // Make sure to replace 'your-domain.com' with your actual domain
-    const baseUrl = process.env.FRONTEND_URL || 'https://my-v-kard.vercel.app'; // Use your actual base URL
+    const baseUrl = process.env.BACKEND_URL || 'https://myvkard-backend-omrh.onrender.com'; // Use your actual base URL
     const logoUrl = `${baseUrl}/uploads/${req.file.filename}`;
     
     res.json({ 
