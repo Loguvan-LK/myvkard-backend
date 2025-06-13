@@ -70,16 +70,6 @@ const sendPurchaseConfirmationEmail = async (userEmail, deliveryAddress, quantit
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">🎉 Your NFC Cards Order Confirmed!</h2>
         
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #28a745;">What's Next?</h3>
-          <ul style="line-height: 1.6;">
-            <li>✅ Your NFC cards are being prepared</li>
-            <li>📧 Check your email for shipping details</li>
-            <li>🎛️ Visit your dashboard to manage your cards</li>
-            <li>🎨 Each card comes with 3 customizable profiles</li>
-          </ul>
-        </div>
-
         <div style="background-color: #e9ecef; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #333;">📦 Shipping Details</h3>
           <p><strong>Quantity:</strong> ${quantity} NFC Card(s)</p>
